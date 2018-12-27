@@ -5,6 +5,7 @@ import (
 
 	"github.com/kevinhury/membrane/httpserver/logger"
 	"github.com/kevinhury/membrane/httpserver/middlewares"
+	"github.com/kevinhury/membrane/httpserver/recover"
 )
 
 func rootHandlerFunc(w http.ResponseWriter, r *http.Request) {
@@ -15,7 +16,7 @@ func rootHandlerFunc(w http.ResponseWriter, r *http.Request) {
 func StartServer() {
 	m := http.NewServeMux()
 
-	root := middlewares.Chain(rootHandlerFunc, logger.Logger)
+	root := middlewares.Chain(rootHandlerFunc, recover.Middleware, logger.Middleware)
 	m.HandleFunc("/", root)
 
 	s := &http.Server{

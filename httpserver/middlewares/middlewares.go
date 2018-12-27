@@ -5,7 +5,7 @@ import "net/http"
 // Middleware type
 type Middleware func(http.HandlerFunc) http.HandlerFunc
 
-// Chain func
+// Chain middlewares in order
 func Chain(handler http.HandlerFunc, middlewares ...Middleware) http.HandlerFunc {
 	if len(middlewares) == 0 {
 		return handler
@@ -17,4 +17,9 @@ func Chain(handler http.HandlerFunc, middlewares ...Middleware) http.HandlerFunc
 	}
 
 	return wrapped
+}
+
+// ChainSlice middleware accepts slice as list of middlewares
+func ChainSlice(handler http.HandlerFunc, middlewares []Middleware) http.HandlerFunc {
+	return Chain(handler, middlewares...)
 }
