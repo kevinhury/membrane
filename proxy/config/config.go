@@ -6,82 +6,104 @@ import (
 
 // Configuration struct
 type Configuration struct {
-	APIEndpoints []struct {
-		Name  string `yaml:"name"`
-		Host  string `yaml:"host"`
-		Paths string `yaml:"paths"`
-	} `yaml:"apiEndpoints"`
-	ServiceEndpoints []struct {
-		Name string `yaml:"name"`
-		Uerl string `yaml:"uerl"`
-	} `yaml:"serviceEndpoints"`
-	Pipelines []struct {
-		Name         string   `yaml:"name"`
-		APIEndpoints []string `yaml:"apiEndpoints"`
-		Policies     []struct {
-			Proxy []struct {
-				Action struct {
-					ServiceEndpoint string `yaml:"serviceEndpoint"`
-					ChangeOrigin    bool   `yaml:"changeOrigin"`
-				} `yaml:"action"`
-			} `yaml:"proxy"`
-		} `yaml:"policies"`
-	} `yaml:"pipelines"`
+	configMap *Map
+	endpoints map[string]*APIEndpoint
+	services  map[string]*ServiceEndpoint
 }
 
-// // Configuration struct
-// type Configuration struct {
-// 	APIVersion string `yaml:"apiVersion"`
-// 	Kind       string `yaml:"kind"`
-// 	Metadata   struct {
-// 		Name      string `yaml:"name"`
-// 		Namespace string `yaml:"namespace"`
-// 		Labels    struct {
-// 			RouterDeisIoRoutable string `yaml:"router.deis.io/routable"`
-// 		} `yaml:"labels"`
-// 		Annotations struct {
-// 			RouterDeisIoDomains string `yaml:"router.deis.io/domains"`
-// 		} `yaml:"annotations"`
-// 	} `yaml:"metadata"`
-// 	Spec struct {
-// 		Type     string `yaml:"type"`
-// 		Selector struct {
-// 			App string `yaml:"app"`
-// 		} `yaml:"selector"`
-// 		Ports []struct {
-// 			Name       string `yaml:"name"`
-// 			Port       int    `yaml:"port"`
-// 			TargetPort int    `yaml:"targetPort"`
-// 			NodePort   int    `yaml:"nodePort,omitempty"`
-// 		} `yaml:"ports"`
-// 	} `yaml:"spec"`
-// }
-// `
-// apiVersion: v1
-// kind: Service
-// metadata:
-//   name: myName
-//   namespace: default
-//   labels:
-//     router.deis.io/routable: "true"
-//   annotations:
-//     router.deis.io/domains: ""
-// spec:
-//   type: NodePort
-//   selector:
-//     app: myName
-//   ports:
-//     - name: http
-//       port: 80
-//       targetPort: 80
-//     - name: https
-//       port: 443
-//       targetPort: 443
-// `
+// NewWithData func
+func NewWithData(data []byte) (*Configuration, error) {
+	cm, err := Parse(data)
+	if err != nil {
+		return nil, err
+	}
+
+	config := &Configuration{configMap: cm}
+	config.endpoints = make(map[string]*APIEndpoint, len(config.configMap.APIEndpoints))
+	for _, ep := range config.configMap.APIEndpoints {
+		config.endpoints[ep.Name] = &ep
+	}
+	config.services = make(map[string]*ServiceEndpoint, len(config.configMap.ServiceEndpoints))
+	for _, se := range config.configMap.ServiceEndpoints {
+		config.services[se.Name] = &se
+	}
+
+	return config, nil
+}
+
+// Pipelines func
+func (c *Configuration) Pipelines(host, paths string) []Pipeline {
+	var pipelines []Pipeline
+	endpoints := c.Endpoints(host, paths)
+
+	for _, p := range c.configMap.Pipelines {
+		for _, epName := range p.APIEndpoints {
+			if _, ok := endpoints[epName]; ok {
+				pipelines = append(pipelines, p)
+			}
+		}
+	}
+
+	return pipelines
+}
+
+// Endpoints func
+func (c *Configuration) Endpoints(host, paths string) map[string]*APIEndpoint {
+	endpoints := make(map[string]*APIEndpoint, 0)
+	for _, ep := range c.configMap.APIEndpoints {
+		if host != ep.Host {
+			continue
+		}
+		if paths != ep.Paths {
+			continue
+		}
+		endpoints[ep.Name] = &ep
+	}
+
+	return endpoints
+}
+
+// Service func
+func (c *Configuration) Service(name string) *ServiceEndpoint {
+	return c.services[name]
+}
+
+// Map struct
+type Map struct {
+	APIEndpoints     []APIEndpoint     `yaml:"apiEndpoints"`
+	ServiceEndpoints []ServiceEndpoint `yaml:"serviceEndpoints"`
+	Pipelines        []Pipeline        `yaml:"pipelines"`
+}
+
+// APIEndpoint struct
+type APIEndpoint struct {
+	Name  string `yaml:"name"`
+	Host  string `yaml:"host"`
+	Paths string `yaml:"paths"`
+}
+
+// ServiceEndpoint struct
+type ServiceEndpoint struct {
+	Name string `yaml:"name"`
+	URL  string `yaml:"url"`
+}
+
+// Pipeline struct
+type Pipeline struct {
+	Name         string   `yaml:"name"`
+	APIEndpoints []string `yaml:"apiEndpoints"`
+	Policies     []struct {
+		Name   string `yaml:"name"`
+		Action struct {
+			ServiceEndpoint string `yaml:"serviceEndpoint"`
+			ChangeOrigin    bool   `yaml:"changeOrigin"`
+		} `yaml:"action"`
+	} `yaml:"policies"`
+}
 
 // Parse yaml to Configuration
-func Parse(data []byte) (*Configuration, error) {
-	var conf Configuration
+func Parse(data []byte) (*Map, error) {
+	var conf Map
 	err := yaml.Unmarshal(data, &conf)
 	if err != nil {
 		return nil, err

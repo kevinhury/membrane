@@ -10,14 +10,15 @@ import (
 )
 
 func rootHandlerFunc(w http.ResponseWriter, r *http.Request) {
-	pr := server.NewWithConfigFile("config.yaml")
+	pr := server.NewWithConfigFile("config.yaml", false)
 	err := pr.Serve(w, r)
 	if err != nil {
-		fmt.Printf("Received error from root handler: %s", err)
+		fmt.Printf("Received error from root handler: %s\n", err)
+		w.Write([]byte(err.Error()))
 	}
 }
 
 func main() {
 	fmt.Println("Starting server..")
-	httpserver.StartServer(rootHandlerFunc, ":8081")
+	httpserver.StartServer(rootHandlerFunc, ":8082")
 }
