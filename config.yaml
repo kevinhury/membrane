@@ -1,4 +1,4 @@
-apiEndpoints:
+inboundEndpoints:
   - name: api
     host: 'localhost:8082'
     paths:
@@ -8,7 +8,7 @@ apiEndpoints:
       - GET
       - POST
 
-serviceEndpoints:
+outboundEndpoints:
   - name: auth-service
     url: 'http://localhost:3112'
     urls: # NOT IMPLEMENTED
@@ -17,13 +17,13 @@ serviceEndpoints:
 
 pipelines:
     - name: getting-started
-      apiEndpoints:
+      inboundEndpoints:
         - api
       policies:
         - name: proxy
           action:
-            serviceEndpoint: auth-service
-            changeOrigin: true # NOT IMPLEMENTED
+            outboundEndpoint: auth-service
+            keepOrigin: false
         - name: cors
         - name: rate-limit # NOT IMPLEMENTED
           action:

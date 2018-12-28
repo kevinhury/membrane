@@ -6,23 +6,23 @@ import (
 
 func TestParsing(t *testing.T) {
 	mockConfig := `
-apiEndpoints:
+inboundEndpoints:
   - name: api
     host: 'localhost'
     paths: '/ip'
 
-serviceEndpoints:
+outboundEndpoints:
   - name: httpbin
     uerl: 'https://httpbin.org' 
 
 pipelines:
     - name: getting-started
-      apiEndpoints:
+      inboundEndpoints:
         - api
       policies:
         - proxy:
             - action:
-                serviceEndpoint: httpbin
+                outboundEndpoint: httpbin
                 changeOrigin: true
 
   `

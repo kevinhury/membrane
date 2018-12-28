@@ -7,8 +7,8 @@ import (
 // Configuration struct
 type Configuration struct {
 	configMap *Map
-	endpoints map[string]*APIEndpoint
-	services  map[string]*ServiceEndpoint
+	endpoints map[string]*InboundEndpoint
+	services  map[string]*OutboundEndpoint
 }
 
 // NewWithData func
@@ -19,12 +19,12 @@ func NewWithData(data []byte) (*Configuration, error) {
 	}
 
 	config := &Configuration{configMap: cm}
-	config.endpoints = make(map[string]*APIEndpoint, len(config.configMap.APIEndpoints))
-	for _, ep := range config.configMap.APIEndpoints {
+	config.endpoints = make(map[string]*InboundEndpoint, len(config.configMap.InboundEndpoints))
+	for _, ep := range config.configMap.InboundEndpoints {
 		config.endpoints[ep.Name] = &ep
 	}
-	config.services = make(map[string]*ServiceEndpoint, len(config.configMap.ServiceEndpoints))
-	for _, se := range config.configMap.ServiceEndpoints {
+	config.services = make(map[string]*OutboundEndpoint, len(config.configMap.OutboundEndpoints))
+	for _, se := range config.configMap.OutboundEndpoints {
 		config.services[se.Name] = &se
 	}
 
@@ -37,7 +37,7 @@ func (c *Configuration) Pipelines(host, path, method string) []Pipeline {
 	endpoints := c.Endpoints(host, path, method)
 
 	for _, p := range c.configMap.Pipelines {
-		for _, epName := range p.APIEndpoints {
+		for _, epName := range p.InboundEndpoints {
 			if _, ok := endpoints[epName]; ok {
 				pipelines = append(pipelines, p)
 			}
@@ -48,9 +48,9 @@ func (c *Configuration) Pipelines(host, path, method string) []Pipeline {
 }
 
 // Endpoints func
-func (c *Configuration) Endpoints(host, path, method string) map[string]*APIEndpoint {
-	endpoints := make(map[string]*APIEndpoint, 0)
-	for _, ep := range c.configMap.APIEndpoints {
+func (c *Configuration) Endpoints(host, path, method string) map[string]*InboundEndpoint {
+	endpoints := make(map[string]*InboundEndpoint, 0)
+	for _, ep := range c.configMap.InboundEndpoints {
 		if host != ep.Host {
 			continue
 		}
@@ -81,40 +81,40 @@ func (c *Configuration) Endpoints(host, path, method string) map[string]*APIEndp
 }
 
 // Service func
-func (c *Configuration) Service(name string) *ServiceEndpoint {
+func (c *Configuration) Service(name string) *OutboundEndpoint {
 	return c.services[name]
 }
 
 // Map struct
 type Map struct {
-	APIEndpoints     []APIEndpoint     `yaml:"apiEndpoints"`
-	ServiceEndpoints []ServiceEndpoint `yaml:"serviceEndpoints"`
-	Pipelines        []Pipeline        `yaml:"pipelines"`
+	InboundEndpoints  []InboundEndpoint  `yaml:"inboundEndpoints"`
+	OutboundEndpoints []OutboundEndpoint `yaml:"outboundEndpoints"`
+	Pipelines         []Pipeline         `yaml:"pipelines"`
 }
 
-// APIEndpoint struct
-type APIEndpoint struct {
+// InboundEndpoint struct
+type InboundEndpoint struct {
 	Name    string   `yaml:"name"`
 	Host    string   `yaml:"host"`
 	Paths   []string `yaml:"paths"`
 	Methods []string `yaml:"methods"`
 }
 
-// ServiceEndpoint struct
-type ServiceEndpoint struct {
+// OutboundEndpoint struct
+type OutboundEndpoint struct {
 	Name string `yaml:"name"`
 	URL  string `yaml:"url"`
 }
 
 // Pipeline struct
 type Pipeline struct {
-	Name         string   `yaml:"name"`
-	APIEndpoints []string `yaml:"apiEndpoints"`
-	Policies     []struct {
+	Name             string   `yaml:"name"`
+	InboundEndpoints []string `yaml:"inboundEndpoints"`
+	Policies         []struct {
 		Name   string `yaml:"name"`
 		Action struct {
-			ServiceEndpoint string `yaml:"serviceEndpoint"`
-			ChangeOrigin    bool   `yaml:"changeOrigin"`
+			OutboundEndpoint string `yaml:"outboundEndpoint"`
+			KeepOrigin       bool   `yaml:"keepOrigin"`
 		} `yaml:"action"`
 	} `yaml:"policies"`
 }

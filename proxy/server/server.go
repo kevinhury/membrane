@@ -63,7 +63,7 @@ func (rp *ReverseProxy) parseTarget(req *http.Request, pipelines []config.Pipeli
 			if policy.Name != "proxy" {
 				continue
 			}
-			name := policy.Action.ServiceEndpoint
+			name := policy.Action.OutboundEndpoint
 			target = rp.config.Service(name).URL
 			break
 		}
