@@ -1,0 +1,18 @@
+apiEndpoints:
+  - name: api
+    host: 'localhost'
+    paths: '/ip'
+
+serviceEndpoints:
+  - name: httpbin
+    uerl: 'https://httpbin.org'
+
+pipelines:
+    - name: getting-started
+      apiEndpoints:
+        - api
+      policies:
+        - proxy:
+            - action:
+                serviceEndpoint: httpbin
+                changeOrigin: true

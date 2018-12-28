@@ -1,6 +1,7 @@
 package httpserver
 
 import (
+	"log"
 	"net/http"
 
 	"github.com/kevinhury/membrane/httpserver/logger"
@@ -8,21 +9,17 @@ import (
 	"github.com/kevinhury/membrane/httpserver/recover"
 )
 
-func rootHandlerFunc(w http.ResponseWriter, r *http.Request) {
-	w.Write([]byte("Hello World!"))
-}
-
 // StartServer func
-func StartServer() {
+func StartServer(h http.HandlerFunc, addr string) {
 	m := http.NewServeMux()
 
-	root := middlewares.Chain(rootHandlerFunc, recover.Middleware, logger.Middleware)
+	root := middlewares.Chain(h, recover.Middleware, logger.Middleware)
 	m.HandleFunc("/", root)
 
 	s := &http.Server{
-		Addr:    ":8000",
+		Addr:    addr,
 		Handler: m,
 	}
 
-	s.ListenAndServe()
+	log.Fatal(s.ListenAndServe())
 }
