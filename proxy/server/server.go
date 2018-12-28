@@ -7,8 +7,8 @@ import (
 	"net/http/httputil"
 	"net/url"
 
+	"github.com/kevinhury/membrane/config"
 	"github.com/kevinhury/membrane/proxy"
-	"github.com/kevinhury/membrane/proxy/config"
 )
 
 // ReverseProxy struct
@@ -18,7 +18,8 @@ type ReverseProxy struct {
 
 // Serve func
 func (rp *ReverseProxy) Serve(w http.ResponseWriter, r *http.Request) error {
-	url, err := rp.parseTarget(r)
+	pipelines := rp.config.Pipelines(r.Host, r.URL.Path, r.Method)
+	url, err := rp.parseTarget(r, pipelines)
 	if err != nil {
 		return err
 	}
@@ -50,10 +51,9 @@ func NewWithConfigFile(fileName string, watch bool) proxy.Proxy {
 	return &ReverseProxy{config: conf}
 }
 
-func (rp *ReverseProxy) parseTarget(req *http.Request) (*url.URL, error) {
+func (rp *ReverseProxy) parseTarget(req *http.Request, pipelines []config.Pipeline) (*url.URL, error) {
 	var target string
 
-	pipelines := rp.config.Pipelines(req.Host, req.URL.Path)
 	if len(pipelines) == 0 {
 		return req.URL, nil
 	}
@@ -81,8 +81,4 @@ func (rp *ReverseProxy) parseTarget(req *http.Request) (*url.URL, error) {
 	log.Printf("Proxying to url %s\n", url)
 
 	return url, nil
-}
-
-func (rp *ReverseProxy) matchingEndpoint() bool {
-	return false
 }

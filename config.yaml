@@ -1,11 +1,19 @@
 apiEndpoints:
   - name: api
     host: 'localhost:8082'
-    paths: '/v1/auth/signOn'
+    paths:
+      - '/v1/auth/*'
+      - /v1/auth/signOn
+    methods:
+      - GET
+      - POST
 
 serviceEndpoints:
   - name: auth-service
     url: 'http://localhost:3112'
+    urls: # NOT IMPLEMENTED
+      - 'http://localhost:3112'
+      - 'http://localhost:3113'
 
 pipelines:
     - name: getting-started
@@ -15,4 +23,9 @@ pipelines:
         - name: proxy
           action:
             serviceEndpoint: auth-service
-            changeOrigin: true
+            changeOrigin: true # NOT IMPLEMENTED
+        - name: cors
+        - name: rate-limit # NOT IMPLEMENTED
+          action:
+            max: 1
+            windowMs: 1000

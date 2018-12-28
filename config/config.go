@@ -32,9 +32,9 @@ func NewWithData(data []byte) (*Configuration, error) {
 }
 
 // Pipelines func
-func (c *Configuration) Pipelines(host, paths string) []Pipeline {
+func (c *Configuration) Pipelines(host, path, method string) []Pipeline {
 	var pipelines []Pipeline
-	endpoints := c.Endpoints(host, paths)
+	endpoints := c.Endpoints(host, path, method)
 
 	for _, p := range c.configMap.Pipelines {
 		for _, epName := range p.APIEndpoints {
@@ -48,13 +48,30 @@ func (c *Configuration) Pipelines(host, paths string) []Pipeline {
 }
 
 // Endpoints func
-func (c *Configuration) Endpoints(host, paths string) map[string]*APIEndpoint {
+func (c *Configuration) Endpoints(host, path, method string) map[string]*APIEndpoint {
 	endpoints := make(map[string]*APIEndpoint, 0)
 	for _, ep := range c.configMap.APIEndpoints {
 		if host != ep.Host {
 			continue
 		}
-		if paths != ep.Paths {
+		matchP := false
+		for _, p := range ep.Paths {
+			if path == p {
+				matchP = true
+				break
+			}
+		}
+		if matchP != true {
+			continue
+		}
+		matchM := false
+		for _, m := range ep.Methods {
+			if method == m {
+				matchM = true
+				break
+			}
+		}
+		if matchM != true {
 			continue
 		}
 		endpoints[ep.Name] = &ep
@@ -77,9 +94,10 @@ type Map struct {
 
 // APIEndpoint struct
 type APIEndpoint struct {
-	Name  string `yaml:"name"`
-	Host  string `yaml:"host"`
-	Paths string `yaml:"paths"`
+	Name    string   `yaml:"name"`
+	Host    string   `yaml:"host"`
+	Paths   []string `yaml:"paths"`
+	Methods []string `yaml:"methods"`
 }
 
 // ServiceEndpoint struct
@@ -108,6 +126,8 @@ func Parse(data []byte) (*Map, error) {
 	if err != nil {
 		return nil, err
 	}
+
+	// TODO: VALIDATE CONFIG
 
 	return &conf, nil
 }
