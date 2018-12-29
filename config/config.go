@@ -110,13 +110,14 @@ type OutboundEndpoint struct {
 type Pipeline struct {
 	Name             string   `yaml:"name"`
 	InboundEndpoints []string `yaml:"inboundEndpoints"`
-	Policies         []struct {
-		Name   string `yaml:"name"`
-		Action struct {
-			OutboundEndpoint string `yaml:"outboundEndpoint"`
-			KeepOrigin       bool   `yaml:"keepOrigin"`
-		} `yaml:"action"`
-	} `yaml:"policies"`
+	Plugins          []Plugin `yaml:"plugins"`
+}
+
+// Plugin struct
+type Plugin struct {
+	Name       string                 `yaml:"name"`
+	Conditions map[string]interface{} `yaml:"conditions"`
+	Action     map[string]interface{} `yaml:"action"`
 }
 
 // Parse yaml to Configuration

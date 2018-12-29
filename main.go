@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"log"
 	"net/http"
 
 	"github.com/kevinhury/membrane/proxy"
@@ -13,8 +14,11 @@ import (
 func handler(pr proxy.Proxy) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		err := pr.Serve(w, r)
-		if err != nil {
-			fmt.Printf("Received error from root handler: %s\n", err)
+		if err != nil && err.Error() == "Unsupported URL" {
+			log.Printf("%s %s %s %s\n", err.Error(), r.Host, r.URL.Path, r.Method)
+			w.WriteHeader(http.StatusNotFound)
+		} else if err != nil {
+			log.Printf("[erro] Received error from root handler: %s\n", err)
 			w.Write([]byte(err.Error()))
 		}
 	}
@@ -26,5 +30,5 @@ func main() {
 	if pr == nil {
 		panic("Could not set up proxy")
 	}
-	httpserver.StartServer(handler(pr), ":8082")
+	httpserver.StartServer(handler(pr), ":3000")
 }

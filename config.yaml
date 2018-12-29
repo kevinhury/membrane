@@ -1,6 +1,6 @@
 inboundEndpoints:
-  - name: api
-    host: 'localhost:8082'
+  - name: auth-inbound
+    host: 'localhost:3000'
     paths:
       - '/v1/auth/*'
       - /v1/auth/signOn
@@ -16,15 +16,20 @@ outboundEndpoints:
       - 'http://localhost:3113'
 
 pipelines:
-    - name: getting-started
+    - name: first-pipeline
       inboundEndpoints:
-        - api
-      policies:
+        - auth-inbound
+      plugins:
         - name: proxy
           action:
             outboundEndpoint: auth-service
             keepOrigin: false
         - name: cors
+        - name: response-transform
+          action:
+            modifyHeader: 201
+            setHeader:
+              - janua-token-modified: true
         - name: rate-limit # NOT IMPLEMENTED
           action:
             max: 1

@@ -19,7 +19,7 @@ pipelines:
     - name: getting-started
       inboundEndpoints:
         - api
-      policies:
+      plugins:
         - proxy:
             - action:
                 outboundEndpoint: httpbin

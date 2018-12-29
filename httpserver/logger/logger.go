@@ -13,6 +13,6 @@ func Middleware(h http.HandlerFunc) http.HandlerFunc {
 		h.ServeHTTP(w, r)
 		endTime := time.Since(startTime)
 
-		log.Printf("%s %s %v", r.URL, r.Method, endTime)
+		log.Printf("[info] %s %s %v\n", r.URL, r.Method, endTime)
 	})
 }
