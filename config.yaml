@@ -30,6 +30,8 @@ pipelines:
             modifyStatus: 200
             setHeaders:
               membrane-forwarded: true
+            reformatBody:
+              accessToken: sessionId
         - name: rate-limit # NOT IMPLEMENTED
           action:
             max: 1

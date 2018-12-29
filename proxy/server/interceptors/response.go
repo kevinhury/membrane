@@ -2,11 +2,13 @@ package interceptors
 
 import (
 	"bytes"
+	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"log"
 	"net/http"
 	"strconv"
+	"strings"
 
 	"github.com/kevinhury/membrane/config"
 )
@@ -49,14 +51,12 @@ func modifyRespose(resp *http.Response, plugin config.Plugin) error {
 	log.Printf("Intercepted response %s", string(b))
 
 	b = bytes.Replace(b, []byte("server"), []byte("schmerver"), -1)
-	body := ioutil.NopCloser(bytes.NewReader(b))
-	resp.Body = body
-	resp.ContentLength = int64(len(b))
-	resp.Header.Set("Content-Length", strconv.Itoa(len(b)))
-	heads := pluginHeaders(plugin.Action["setHeaders"])
+
+	heads := mapJSON(plugin.Action["setHeaders"])
 	for k, v := range heads {
 		resp.Header.Set(k, string(v))
 	}
+
 	if modifyStatus, ok := plugin.Action["modifyStatus"]; ok {
 		header := fmt.Sprintf("%+v", modifyStatus)
 		if header != "" {
@@ -67,10 +67,36 @@ func modifyRespose(resp *http.Response, plugin config.Plugin) error {
 		}
 	}
 
+	if reformatBody, ok := plugin.Action["reformatBody"]; ok {
+		if ctype := resp.Header.Get("content-type"); !strings.Contains(ctype, "application/json") {
+			log.Printf("Could not reformat body. got %s", ctype)
+		} else {
+			formation := mapJSON(reformatBody)
+			bodyJSON := make(map[string]interface{})
+			err := json.Unmarshal(b, &bodyJSON)
+			if err == nil {
+				for k, v := range formation {
+					if value, ok := bodyJSON[k]; ok {
+						delete(bodyJSON, k)
+						bodyJSON[v] = value
+					}
+				}
+			}
+			convertedB, err := json.Marshal(bodyJSON)
+			if err == nil {
+				b = convertedB
+			}
+		}
+	}
+
+	resp.Body = ioutil.NopCloser(bytes.NewReader(b))
+	resp.ContentLength = int64(len(b))
+	resp.Header.Set("Content-Length", strconv.Itoa(len(b)))
+
 	return nil
 }
 
-func pluginHeaders(action interface{}) map[string]string {
+func mapJSON(action interface{}) map[string]string {
 	mapped := action.(map[interface{}]interface{})
 	headers := make(map[string]string, len(mapped))
 
