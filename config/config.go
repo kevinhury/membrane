@@ -113,6 +113,27 @@ type Pipeline struct {
 	Plugins          []Plugin `yaml:"plugins"`
 }
 
+// Plugin func
+func (p *Pipeline) Plugin(name string) *Plugin {
+	for _, plugin := range p.Plugins {
+		if plugin.Name == name {
+			return &plugin
+		}
+	}
+	return nil
+}
+
+// PluginsMatchingName func
+func (p *Pipeline) PluginsMatchingName(name string) []Plugin {
+	var plugins []Plugin
+	for _, p := range p.Plugins {
+		if p.Name == name {
+			plugins = append(plugins, p)
+		}
+	}
+	return plugins
+}
+
 // Plugin struct
 type Plugin struct {
 	Name       string                 `yaml:"name"`

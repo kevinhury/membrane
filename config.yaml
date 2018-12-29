@@ -27,9 +27,9 @@ pipelines:
         - name: cors
         - name: response-transform
           action:
-            modifyHeader: 201
-            setHeader:
-              - janua-token-modified: true
+            modifyStatus: 200
+            setHeaders:
+              membrane-forwarded: true
         - name: rate-limit # NOT IMPLEMENTED
           action:
             max: 1
