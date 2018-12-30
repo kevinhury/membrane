@@ -20,6 +20,8 @@ pipelines:
       inboundEndpoints:
         - auth-inbound
       plugins:
+        - name: jwt
+          secret: c2VjcmV0
         - name: proxy
           action:
             outboundEndpoint: auth-service

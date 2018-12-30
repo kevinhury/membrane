@@ -1,5 +1,10 @@
 package actions
 
+// JWT struct
+type JWT struct {
+	Secret string
+}
+
 // Proxy struct
 type Proxy struct {
 	OutboundEndpoint string

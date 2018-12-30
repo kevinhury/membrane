@@ -155,7 +155,11 @@ func Parse(data []byte) (*Map, error) {
 		pipeline := conf.Pipelines[i]
 		for idx := 0; idx < len(pipeline.Plugins); idx++ {
 			plugin := pipeline.Plugins[idx]
-			if plugin.Name == "proxy" {
+			if plugin.Name == "jwt" {
+				var act actions.JWT
+				mapstructure.Decode(plugin.Action, &act)
+				pipeline.Plugins[idx].Action = act
+			} else if plugin.Name == "proxy" {
 				var act actions.Proxy
 				mapstructure.Decode(plugin.Action, &act)
 				pipeline.Plugins[idx].Action = act

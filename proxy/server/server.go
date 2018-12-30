@@ -46,12 +46,12 @@ func (rp *ReverseProxy) Serve(w http.ResponseWriter, r *http.Request) error {
 
 	proxy := httputil.NewSingleHostReverseProxy(url)
 	proxy.ModifyResponse = interceptors.ResponseModifier(pipelines)
+	interceptors.RequestModifier(r, pipelines)
 
 	r.URL.Host = url.Host
 	r.URL.Scheme = url.Scheme
 	r.Header.Set("X-Forwarded-Host", r.Header.Get("Host"))
 	r.Host = url.Host
-	interceptors.RequestModifier(r, pipelines)
 
 	proxy.ServeHTTP(w, r)
 
