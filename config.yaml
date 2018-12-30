@@ -25,6 +25,14 @@ pipelines:
             outboundEndpoint: auth-service
             keepOrigin: false
         - name: cors
+        - name: request-transform
+          action:
+            body:
+              duplicate:
+                deviceId: anotherId
+            query:
+              append:
+                queryKey: queryValue
         - name: response-transform
           action:
             modifyStatus: 200

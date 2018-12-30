@@ -2,6 +2,8 @@ package config
 
 import (
 	"github.com/go-yaml/yaml"
+	"github.com/kevinhury/membrane/config/actions"
+	"github.com/mitchellh/mapstructure"
 )
 
 // Configuration struct
@@ -138,7 +140,7 @@ func (p *Pipeline) PluginsMatchingName(name string) []Plugin {
 type Plugin struct {
 	Name       string                 `yaml:"name"`
 	Conditions map[string]interface{} `yaml:"conditions"`
-	Action     map[string]interface{} `yaml:"action"`
+	Action     interface{}            `yaml:"action"`
 }
 
 // Parse yaml to Configuration
@@ -149,7 +151,25 @@ func Parse(data []byte) (*Map, error) {
 		return nil, err
 	}
 
-	// TODO: VALIDATE CONFIG
+	for i := 0; i < len(conf.Pipelines); i++ {
+		pipeline := conf.Pipelines[i]
+		for idx := 0; idx < len(pipeline.Plugins); idx++ {
+			plugin := pipeline.Plugins[idx]
+			if plugin.Name == "proxy" {
+				var act actions.Proxy
+				mapstructure.Decode(plugin.Action, &act)
+				pipeline.Plugins[idx].Action = act
+			} else if plugin.Name == "response-transform" {
+				var act actions.ResponseTransform
+				mapstructure.Decode(plugin.Action, &act)
+				pipeline.Plugins[idx].Action = act
+			} else if plugin.Name == "request-transform" {
+				var act actions.RequestTransform
+				mapstructure.Decode(plugin.Action, &act)
+				pipeline.Plugins[idx].Action = act
+			}
+		}
+	}
 
 	return &conf, nil
 }

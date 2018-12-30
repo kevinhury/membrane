@@ -8,6 +8,8 @@ import (
 	"net/http/httputil"
 	"net/url"
 
+	"github.com/kevinhury/membrane/config/actions"
+
 	"github.com/kevinhury/membrane/config"
 	"github.com/kevinhury/membrane/proxy"
 	"github.com/kevinhury/membrane/proxy/server/interceptors"
@@ -49,7 +51,7 @@ func (rp *ReverseProxy) Serve(w http.ResponseWriter, r *http.Request) error {
 	r.URL.Scheme = url.Scheme
 	r.Header.Set("X-Forwarded-Host", r.Header.Get("Host"))
 	r.Host = url.Host
-	r.Body, r.ContentLength = interceptors.RequestModifier(r, pipelines)
+	interceptors.RequestModifier(r, pipelines)
 
 	proxy.ServeHTTP(w, r)
 
@@ -63,14 +65,17 @@ func (rp *ReverseProxy) parseTarget(req *http.Request, pipelines []config.Pipeli
 		return nil, errors.New("Unsupported URL")
 	}
 
-	for _, p := range pipelines {
-		plugin := p.Plugin("proxy")
-		if plugin == nil {
-			continue
-		}
-		if name, ok := plugin.Action["outboundEndpoint"].(string); ok {
-			target = rp.config.Service(name).URL
-			break
+	for idx := range pipelines {
+		p := pipelines[idx]
+		plugs := p.PluginsMatchingName("proxy")
+		for idx := range plugs {
+			plugin := plugs[idx]
+			if action, ok := plugin.Action.(actions.Proxy); ok {
+				target = rp.config.Service(action.OutboundEndpoint).URL
+				break
+			} else {
+				log.Printf("Could not parse plugin %+v\n", plugin)
+			}
 		}
 	}
 

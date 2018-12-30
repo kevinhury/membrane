@@ -3,12 +3,13 @@ package interceptors
 import (
 	"bytes"
 	"encoding/json"
-	"fmt"
 	"io/ioutil"
 	"log"
 	"net/http"
 	"strconv"
 	"strings"
+
+	"github.com/kevinhury/membrane/config/actions"
 
 	"github.com/kevinhury/membrane/config"
 )
@@ -24,16 +25,6 @@ func ResponseModifier(pipelines []config.Pipeline) func(*http.Response) error {
 		}
 		return nil
 	}
-}
-
-type pluginAction struct {
-	modifyStatus int
-	setHeader    map[string][]byte
-}
-
-func getAction(action interface{}) (pluginAction, bool) {
-	act, ok := action.(pluginAction)
-	return act, ok
 }
 
 func modifyRespose(resp *http.Response, plugin config.Plugin) error {
@@ -52,40 +43,31 @@ func modifyRespose(resp *http.Response, plugin config.Plugin) error {
 
 	b = bytes.Replace(b, []byte("server"), []byte("schmerver"), -1)
 
-	heads := mapJSON(plugin.Action["setHeaders"])
-	for k, v := range heads {
+	action := plugin.Action.(actions.ResponseTransform)
+	for k, v := range action.SetHeaders {
 		resp.Header.Set(k, string(v))
 	}
 
-	if modifyStatus, ok := plugin.Action["modifyStatus"]; ok {
-		header := fmt.Sprintf("%+v", modifyStatus)
-		if header != "" {
-			code, err := strconv.Atoi(header)
-			if err == nil {
-				resp.StatusCode = code
-			}
-		}
+	if action.ModifyStatus != 0 {
+		resp.StatusCode = action.ModifyStatus
 	}
 
-	if reformatBody, ok := plugin.Action["reformatBody"]; ok {
-		if ctype := resp.Header.Get("content-type"); !strings.Contains(ctype, "application/json") {
-			log.Printf("Could not reformat body. got %s", ctype)
-		} else {
-			formation := mapJSON(reformatBody)
-			bodyJSON := make(map[string]interface{})
-			err := json.Unmarshal(b, &bodyJSON)
-			if err == nil {
-				for k, v := range formation {
-					if value, ok := bodyJSON[k]; ok {
-						delete(bodyJSON, k)
-						bodyJSON[v] = value
-					}
+	if ctype := resp.Header.Get("content-type"); !strings.Contains(ctype, "application/json") {
+		log.Printf("Could not reformat body. got %s", ctype)
+	} else {
+		bodyJSON := make(map[string]interface{})
+		err := json.Unmarshal(b, &bodyJSON)
+		if err == nil {
+			for k, v := range action.ReformatBody {
+				if value, ok := bodyJSON[k]; ok {
+					delete(bodyJSON, k)
+					bodyJSON[v] = value
 				}
 			}
-			convertedB, err := json.Marshal(bodyJSON)
-			if err == nil {
-				b = convertedB
-			}
+		}
+		convertedB, err := json.Marshal(bodyJSON)
+		if err == nil {
+			b = convertedB
 		}
 	}
 
@@ -94,16 +76,4 @@ func modifyRespose(resp *http.Response, plugin config.Plugin) error {
 	resp.Header.Set("Content-Length", strconv.Itoa(len(b)))
 
 	return nil
-}
-
-func mapJSON(action interface{}) map[string]string {
-	mapped := action.(map[interface{}]interface{})
-	headers := make(map[string]string, len(mapped))
-
-	for k, v := range mapped {
-		key := fmt.Sprintf("%+v", k)
-		headers[key] = fmt.Sprintf("%+v", v)
-	}
-
-	return headers
 }
