@@ -11,4 +11,5 @@ type ResponseInterceptor struct{}
 // Proxy interface
 type Proxy interface {
 	Serve(w http.ResponseWriter, r *http.Request) error
+	SetConfig([]byte) error
 }

@@ -2,7 +2,6 @@ package server
 
 import (
 	"errors"
-	"io/ioutil"
 	"log"
 	"net/http"
 	"net/http/httputil"
@@ -20,13 +19,8 @@ type ReverseProxy struct {
 	config *config.Configuration
 }
 
-// NewWithConfigFile func
-func NewWithConfigFile(fileName string, watch bool) proxy.Proxy {
-	content, err := ioutil.ReadFile(fileName)
-	if err != nil {
-		return nil
-	}
-
+// NewWithConfig func
+func NewWithConfig(content []byte) proxy.Proxy {
 	conf, err := config.NewWithData(content)
 	if err != nil {
 		return nil
@@ -54,6 +48,19 @@ func (rp *ReverseProxy) Serve(w http.ResponseWriter, r *http.Request) error {
 	r.Host = url.Host
 
 	proxy.ServeHTTP(w, r)
+
+	return nil
+}
+
+// SetConfig func
+func (rp *ReverseProxy) SetConfig(content []byte) error {
+	conf, err := config.NewWithData(content)
+	if err != nil {
+		return err
+	}
+
+	// TODO: Need to wait for all pending requests and then change
+	rp.config = conf
 
 	return nil
 }
