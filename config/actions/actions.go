@@ -2,7 +2,8 @@ package actions
 
 // JWT struct
 type JWT struct {
-	Secret string
+	Secret   string
+	Strategy string
 }
 
 // Proxy struct

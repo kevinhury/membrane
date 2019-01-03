@@ -21,7 +21,9 @@ pipelines:
         - auth-inbound
       plugins:
         - name: jwt
-          secret: c2VjcmV0
+          action:
+              secret: c2VjcmV0
+              strategy: bearer
         - name: proxy
           action:
             outboundEndpoint: auth-service

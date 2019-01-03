@@ -40,7 +40,7 @@ func (rp *ReverseProxy) Serve(w http.ResponseWriter, r *http.Request) error {
 
 	proxy := httputil.NewSingleHostReverseProxy(url)
 	proxy.ModifyResponse = interceptors.ResponseModifier(pipelines)
-	interceptors.RequestModifier(r, pipelines)
+	interceptors.RequestModifier(r, w, pipelines)
 
 	r.URL.Host = url.Host
 	r.URL.Scheme = url.Scheme
