@@ -14,6 +14,10 @@ type Hook struct {
 
 // PreHook func
 func (h Hook) PreHook(r *http.Request, w http.ResponseWriter, plugin config.Plugin) error {
+	if r.Method != http.MethodOptions {
+		return nil
+	}
+
 	action := plugin.Action.(actions.Cors)
 
 	origin := "*"

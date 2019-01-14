@@ -81,23 +81,30 @@ func (reg *Registry) Serve(w http.ResponseWriter, r *http.Request) error {
 		reg.runPostHooks(resp, pipelines)
 		return nil
 	}
-	reg.runPreHooks(w, r, pipelines)
+	err = reg.runPreHooks(w, r, pipelines)
+	if err != nil {
+		return nil
+	}
 
 	proxy.ServeHTTP(w, r)
 
 	return nil
 }
 
-func (reg *Registry) runPreHooks(w http.ResponseWriter, r *http.Request, pipelines []config.Pipeline) {
+func (reg *Registry) runPreHooks(w http.ResponseWriter, r *http.Request, pipelines []config.Pipeline) error {
 	for i := 0; i < len(pipelines); i++ {
 		pipeline := pipelines[i]
 		for j := 0; j < len(pipeline.Plugins); j++ {
 			plugin := pipeline.Plugins[j]
 			if hook, ok := reg.prehooks[plugin.Name]; ok {
-				hook.PreHook(r, w, plugin)
+				err := hook.PreHook(r, w, plugin)
+				if err != nil {
+					return err
+				}
 			}
 		}
 	}
+	return nil
 }
 
 func (reg *Registry) runPostHooks(resp *http.Response, pipelines []config.Pipeline) {
@@ -106,7 +113,10 @@ func (reg *Registry) runPostHooks(resp *http.Response, pipelines []config.Pipeli
 		for j := 0; j < len(pipeline.Plugins); j++ {
 			plugin := pipeline.Plugins[j]
 			if hook, ok := reg.posthooks[plugin.Name]; ok {
-				hook.PostHook(resp, plugin)
+				err := hook.PostHook(resp, plugin)
+				if err != nil {
+					return
+				}
 			}
 		}
 	}

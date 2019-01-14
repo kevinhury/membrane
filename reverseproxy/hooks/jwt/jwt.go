@@ -1,8 +1,8 @@
 package jwt
 
 import (
+	"encoding/json"
 	"errors"
-	"log"
 	"net/http"
 	"strings"
 
@@ -18,26 +18,23 @@ type Hook struct {
 
 // PreHook func
 func (h Hook) PreHook(r *http.Request, w http.ResponseWriter, plugin config.Plugin) error {
-	action, ok := plugin.Action.(actions.JWT)
-	if !ok {
-		return errors.New("")
-	}
+	action := plugin.Action.(actions.JWT)
 
-	if len(action.Secret) == 0 || len(action.Strategy) == 0 {
+	if action.Secret == "" || action.Strategy == "" {
 		return errors.New("")
 	}
 
 	if action.Strategy == "bearer" {
 		token, err := getAuthToken(r)
 		if err != nil {
-			w.Write([]byte(err.Error()))
+			writeJSONError(w, err)
 			return err
 		}
 
 		err = validateToken(token, action.Secret)
 		if err != nil {
-			w.Write([]byte(err.Error()))
-			return nil
+			writeJSONError(w, err)
+			return err
 		}
 	}
 
@@ -46,7 +43,7 @@ func (h Hook) PreHook(r *http.Request, w http.ResponseWriter, plugin config.Plug
 
 func getAuthToken(r *http.Request) (string, error) {
 	requestToken := r.Header.Get("Authorization")
-	splitToken := strings.Split(requestToken, "Bearer")
+	splitToken := strings.Split(requestToken, "Bearer ")
 	if len(splitToken) < 2 {
 		return "", errors.New("missing auth token")
 	}
@@ -54,11 +51,20 @@ func getAuthToken(r *http.Request) (string, error) {
 }
 
 func validateToken(token, secret string) error {
-	t, err := jwt.Parse(token, func(token *jwt.Token) (interface{}, error) {
+	_, err := jwt.Parse(token, func(token *jwt.Token) (interface{}, error) {
 		return []byte(secret), nil
 	})
 
-	log.Println(t)
-
 	return err
+}
+
+func writeJSONError(w http.ResponseWriter, err error) {
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.WriteHeader(http.StatusUnauthorized)
+	defaultErrorMsg := map[string]string{
+		"error": err.Error(),
+	}
+	bs, _ := json.Marshal(defaultErrorMsg)
+
+	w.Write(bs)
 }
