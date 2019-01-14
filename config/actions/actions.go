@@ -36,3 +36,10 @@ type RateLimit struct {
 	Max      int
 	WindowMs int
 }
+
+// Cors struct
+type Cors struct {
+	Origin  string
+	Methods string
+	Headers string
+}

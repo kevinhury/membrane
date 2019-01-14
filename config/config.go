@@ -171,6 +171,10 @@ func Parse(data []byte) (*Map, error) {
 				var act actions.RequestTransform
 				mapstructure.Decode(plugin.Action, &act)
 				pipeline.Plugins[idx].Action = act
+			} else if plugin.Name == "cors" {
+				var act actions.Cors
+				mapstructure.Decode(plugin.Action, &act)
+				pipeline.Plugins[idx].Action = act
 			}
 		}
 	}

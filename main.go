@@ -8,12 +8,11 @@ import (
 
 	"github.com/fsnotify/fsnotify"
 	"github.com/kevinhury/membrane/reverseproxy"
-	"github.com/kevinhury/membrane/reverseproxy/server"
 
 	"github.com/kevinhury/membrane/httpserver"
 )
 
-func handler(reg reverseproxy.Registry) http.HandlerFunc {
+func handler(reg *reverseproxy.Registry) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		err := reg.Serve(w, r)
 		if err != nil && err.Error() == "Unsupported URL" {
@@ -35,9 +34,9 @@ func main() {
 		panic("Could not read configfile")
 	}
 
-	pr := server.NewWithConfig(content)
-	if pr == nil {
-		panic("Could not set up proxy")
+	reg := reverseproxy.NewWithConfig(content)
+	if reg == nil {
+		panic("Could not set up registry")
 	}
 
 	watcher, err := fsnotify.NewWatcher()
@@ -56,7 +55,7 @@ func main() {
 					if err != nil {
 						fmt.Println("ERROR Reading watched file", event.Name)
 					}
-					pr.SetConfig(content)
+					reg.SetConfig(content)
 				}
 
 				// watch for errors
@@ -70,5 +69,5 @@ func main() {
 		panic(err)
 	}
 
-	httpserver.StartServer(handler(pr), ":3000")
+	httpserver.StartServer(handler(reg), ":3000")
 }
