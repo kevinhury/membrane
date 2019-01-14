@@ -7,15 +7,15 @@ import (
 	"net/http"
 
 	"github.com/fsnotify/fsnotify"
-	"github.com/kevinhury/membrane/proxy"
-	"github.com/kevinhury/membrane/proxy/server"
+	"github.com/kevinhury/membrane/reverseproxy"
+	"github.com/kevinhury/membrane/reverseproxy/server"
 
 	"github.com/kevinhury/membrane/httpserver"
 )
 
-func handler(pr proxy.Proxy) http.HandlerFunc {
+func handler(reg reverseproxy.Registry) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		err := pr.Serve(w, r)
+		err := reg.Serve(w, r)
 		if err != nil && err.Error() == "Unsupported URL" {
 			log.Printf("%s %s %s %s\n", err.Error(), r.Host, r.URL.Path, r.Method)
 			w.WriteHeader(http.StatusNotFound)

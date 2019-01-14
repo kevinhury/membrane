@@ -1,4 +1,4 @@
-package interceptors
+package restransform
 
 import (
 	"bytes"
@@ -9,25 +9,17 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/kevinhury/membrane/config/actions"
-
 	"github.com/kevinhury/membrane/config"
+	"github.com/kevinhury/membrane/config/actions"
 )
 
-// ResponseModifier func
-func ResponseModifier(pipelines []config.Pipeline) func(*http.Response) error {
-	return func(resp *http.Response) error {
-		for i := range pipelines {
-			plugins := pipelines[i].PluginsMatchingName("response-transform")
-			for j := range plugins {
-				modifyRespose(resp, plugins[j])
-			}
-		}
-		return nil
-	}
+// Hook struct
+type Hook struct {
+	Config *config.Configuration
 }
 
-func modifyRespose(resp *http.Response, plugin config.Plugin) error {
+// PostHook func
+func (h Hook) PostHook(resp *http.Response, plugin config.Plugin) error {
 	b, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
 		return err
@@ -37,9 +29,6 @@ func modifyRespose(resp *http.Response, plugin config.Plugin) error {
 	if err != nil {
 		return err
 	}
-
-	log.Printf("Applying plugin %+v", plugin)
-	log.Printf("Intercepted response %s", string(b))
 
 	b = bytes.Replace(b, []byte("server"), []byte("schmerver"), -1)
 

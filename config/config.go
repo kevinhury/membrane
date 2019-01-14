@@ -8,7 +8,7 @@ import (
 
 // Configuration struct
 type Configuration struct {
-	configMap *Map
+	ConfigMap *Map
 	endpoints map[string]*InboundEndpoint
 	services  map[string]*OutboundEndpoint
 }
@@ -20,13 +20,13 @@ func NewWithData(data []byte) (*Configuration, error) {
 		return nil, err
 	}
 
-	config := &Configuration{configMap: cm}
-	config.endpoints = make(map[string]*InboundEndpoint, len(config.configMap.InboundEndpoints))
-	for _, ep := range config.configMap.InboundEndpoints {
+	config := &Configuration{ConfigMap: cm}
+	config.endpoints = make(map[string]*InboundEndpoint, len(config.ConfigMap.InboundEndpoints))
+	for _, ep := range config.ConfigMap.InboundEndpoints {
 		config.endpoints[ep.Name] = &ep
 	}
-	config.services = make(map[string]*OutboundEndpoint, len(config.configMap.OutboundEndpoints))
-	for _, se := range config.configMap.OutboundEndpoints {
+	config.services = make(map[string]*OutboundEndpoint, len(config.ConfigMap.OutboundEndpoints))
+	for _, se := range config.ConfigMap.OutboundEndpoints {
 		config.services[se.Name] = &se
 	}
 
@@ -38,7 +38,7 @@ func (c *Configuration) Pipelines(host, path, method string) []Pipeline {
 	var pipelines []Pipeline
 	endpoints := c.Endpoints(host, path, method)
 
-	for _, p := range c.configMap.Pipelines {
+	for _, p := range c.ConfigMap.Pipelines {
 		for _, epName := range p.InboundEndpoints {
 			if _, ok := endpoints[epName]; ok {
 				pipelines = append(pipelines, p)
@@ -52,7 +52,7 @@ func (c *Configuration) Pipelines(host, path, method string) []Pipeline {
 // Endpoints func
 func (c *Configuration) Endpoints(host, path, method string) map[string]*InboundEndpoint {
 	endpoints := make(map[string]*InboundEndpoint, 0)
-	for _, ep := range c.configMap.InboundEndpoints {
+	for _, ep := range c.ConfigMap.InboundEndpoints {
 		if host != ep.Host {
 			continue
 		}
