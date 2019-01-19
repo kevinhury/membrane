@@ -2,7 +2,6 @@ package reverseproxy
 
 import (
 	"errors"
-	"log"
 	"net/http"
 	"net/http/httputil"
 	"net/url"
@@ -16,8 +15,7 @@ import (
 // Registry struct
 type Registry struct {
 	config    *config.Configuration
-	inHosts   map[string]*httputil.ReverseProxy
-	outHosts  map[string]*httputil.ReverseProxy
+	proxies   map[string]*httputil.ReverseProxy
 	prehooks  map[string]hooks.PreHook
 	posthooks map[string]hooks.PostHook
 }
@@ -29,10 +27,6 @@ func NewWithConfig(content []byte) *Registry {
 		return nil
 	}
 
-	inHosts := make([]string, len(conf.ConfigMap.InboundEndpoints))
-	for i := 0; i < len(inHosts); i++ {
-		inHosts[i] = conf.ConfigMap.InboundEndpoints[0].Host
-	}
 	outHosts := make([]string, len(conf.ConfigMap.OutboundEndpoints))
 	for i := 0; i < len(outHosts); i++ {
 		outHosts[i] = conf.ConfigMap.OutboundEndpoints[0].URL
@@ -40,15 +34,14 @@ func NewWithConfig(content []byte) *Registry {
 
 	return &Registry{
 		config:    conf,
-		inHosts:   initHosts(inHosts),
-		outHosts:  initHosts(outHosts),
+		proxies:   initProxies(outHosts),
 		prehooks:  hooks.Prehooks(conf),
 		posthooks: hooks.Posthooks(conf),
 	}
 }
 
-func initHosts(names []string) map[string]*httputil.ReverseProxy {
-	hosts := make(map[string]*httputil.ReverseProxy, len(names))
+func initProxies(names []string) map[string]*httputil.ReverseProxy {
+	proxies := make(map[string]*httputil.ReverseProxy, len(names))
 
 	for i := 0; i < len(names); i++ {
 		rawurl := names[i]
@@ -56,10 +49,10 @@ func initHosts(names []string) map[string]*httputil.ReverseProxy {
 		if err != nil {
 			continue
 		}
-		hosts[rawurl] = httputil.NewSingleHostReverseProxy(url)
+		proxies[rawurl] = httputil.NewSingleHostReverseProxy(url)
 	}
 
-	return hosts
+	return proxies
 }
 
 // ConfigMap func
@@ -69,14 +62,12 @@ func (reg *Registry) ConfigMap() *config.Configuration {
 
 // Serve func
 func (reg *Registry) Serve(w http.ResponseWriter, r *http.Request) error {
-	log.Printf("ReverseProxy::Serve r.Host(%s) r.URL.Path(%s) r.Method(%s)", r.Host, r.URL.Path, r.Method)
 	pipelines := reg.config.Pipelines(r.Host, r.URL.Path, r.Method)
-	url, err := reg.parseTarget(r, pipelines)
+	target, err := reg.matchOutboundEndpoint(r, pipelines)
 	if err != nil {
 		return err
 	}
-
-	proxy := httputil.NewSingleHostReverseProxy(url)
+	proxy := reg.proxies[target.URL]
 	proxy.ModifyResponse = func(resp *http.Response) error {
 		reg.runPostHooks(resp, pipelines)
 		return nil
@@ -129,15 +120,12 @@ func (reg *Registry) SetConfig(content []byte) error {
 		return err
 	}
 
-	// TODO: Need to wait for all pending requests and then change
 	reg.config = conf
 
 	return nil
 }
 
-func (reg *Registry) parseTarget(req *http.Request, pipelines []config.Pipeline) (*url.URL, error) {
-	var target string
-
+func (reg *Registry) matchOutboundEndpoint(req *http.Request, pipelines []config.Pipeline) (*config.OutboundEndpoint, error) {
 	if len(pipelines) == 0 {
 		return nil, errors.New("Unsupported URL")
 	}
@@ -148,24 +136,10 @@ func (reg *Registry) parseTarget(req *http.Request, pipelines []config.Pipeline)
 		for idx := range plugs {
 			plugin := plugs[idx]
 			if action, ok := plugin.Action.(actions.Proxy); ok {
-				target = reg.config.Service(action.OutboundEndpoint).URL
-				break
-			} else {
-				log.Printf("Could not parse plugin %+v\n", plugin)
+				return reg.config.Service(action.OutboundEndpoint), nil
 			}
 		}
 	}
 
-	if target == "" {
-		return req.URL, nil
-	}
-
-	url, err := url.Parse(target)
-	if err != nil {
-		return nil, err
-	}
-
-	log.Printf("Proxying to url %s\n", url)
-
-	return url, nil
+	return nil, errors.New("Non matching outbound endpoint")
 }
