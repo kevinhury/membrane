@@ -3,7 +3,6 @@ package reqtransform
 import (
 	"bytes"
 	"encoding/json"
-	"errors"
 	"io/ioutil"
 	"net/http"
 
@@ -18,10 +17,8 @@ type Hook struct {
 
 // PreHook func
 func (h Hook) PreHook(r *http.Request, w http.ResponseWriter, plugin config.Plugin) error {
-	action, ok := plugin.Action.(actions.RequestTransform)
-	if !ok {
-		return errors.New("Unsupported action")
-	}
+	action := plugin.Action.(actions.RequestTransform)
+
 	if action.Body != nil {
 		err := modifyRequestBody(r, w, plugin)
 		if err != nil {

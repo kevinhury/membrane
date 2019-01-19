@@ -21,7 +21,7 @@ func (h Hook) PreHook(r *http.Request, w http.ResponseWriter, plugin config.Plug
 	action := plugin.Action.(actions.JWT)
 
 	if action.Secret == "" || action.Strategy == "" {
-		return errors.New("")
+		return errors.New("JWT Plugin: Bad configuration")
 	}
 
 	if action.Strategy == "bearer" {

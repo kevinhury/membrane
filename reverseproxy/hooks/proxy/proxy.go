@@ -1,7 +1,6 @@
 package proxy
 
 import (
-	"errors"
 	"net/http"
 	"net/url"
 
@@ -16,10 +15,7 @@ type Hook struct {
 
 // PreHook func
 func (h Hook) PreHook(r *http.Request, w http.ResponseWriter, plugin config.Plugin) error {
-	act, ok := plugin.Action.(actions.Proxy)
-	if !ok {
-		return errors.New("Unsupported action")
-	}
+	act := plugin.Action.(actions.Proxy)
 
 	target := h.Config.Service(act.OutboundEndpoint).URL
 

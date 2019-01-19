@@ -3,6 +3,7 @@ package config
 import (
 	"github.com/go-yaml/yaml"
 	"github.com/kevinhury/membrane/config/actions"
+	"github.com/kevinhury/membrane/config/urlutils"
 	"github.com/mitchellh/mapstructure"
 )
 
@@ -22,12 +23,14 @@ func NewWithData(data []byte) (*Configuration, error) {
 
 	config := &Configuration{ConfigMap: cm}
 	config.endpoints = make(map[string]*InboundEndpoint, len(config.ConfigMap.InboundEndpoints))
-	for _, ep := range config.ConfigMap.InboundEndpoints {
+	for i := 0; i < len(config.ConfigMap.InboundEndpoints); i++ {
+		ep := config.ConfigMap.InboundEndpoints[i]
 		config.endpoints[ep.Name] = &ep
 	}
 	config.services = make(map[string]*OutboundEndpoint, len(config.ConfigMap.OutboundEndpoints))
-	for _, se := range config.ConfigMap.OutboundEndpoints {
-		config.services[se.Name] = &se
+	for i := 0; i < len(config.ConfigMap.OutboundEndpoints); i++ {
+		out := config.ConfigMap.OutboundEndpoints[i]
+		config.services[out.Name] = &out
 	}
 
 	return config, nil
@@ -53,29 +56,32 @@ func (c *Configuration) Pipelines(host, path, method string) []Pipeline {
 func (c *Configuration) Endpoints(host, path, method string) map[string]*InboundEndpoint {
 	endpoints := make(map[string]*InboundEndpoint, 0)
 	for _, ep := range c.ConfigMap.InboundEndpoints {
-		if host != ep.Host {
-			continue
-		}
-		matchP := false
-		for _, p := range ep.Paths {
-			if path == p {
-				matchP = true
-				break
+		if ep.Host != "" {
+			if host != ep.Host {
+				continue
 			}
 		}
-		if matchP != true {
-			continue
-		}
-		matchM := false
-		for _, m := range ep.Methods {
-			if method == m {
-				matchM = true
-				break
+
+		if len(ep.Paths) > 0 {
+			_, found := urlutils.MatchPath(path, ep.Paths)
+			if found == false {
+				continue
 			}
 		}
-		if matchM != true {
-			continue
+
+		if len(ep.Methods) > 0 {
+			matchM := false
+			for _, m := range ep.Methods {
+				if method == m {
+					matchM = true
+					break
+				}
+			}
+			if matchM != true {
+				continue
+			}
 		}
+
 		endpoints[ep.Name] = &ep
 	}
 
