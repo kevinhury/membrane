@@ -2,44 +2,52 @@ package actions
 
 // JWT struct
 type JWT struct {
-	Secret   string
-	Strategy string
+	Secret   string `yaml:"secret"`
+	Strategy string `yaml:"strategy"`
+}
+
+// JWTExtract struct
+type JWTExtract struct {
+	Secret string            `yaml:"secret"`
+	Body   map[string]string `yaml:"body"`
+	Query  map[string]string `yaml:"query"`
 }
 
 // Proxy struct
 type Proxy struct {
-	OutboundEndpoint string
-	KeepOrigin       bool
+	OutboundEndpoint string `yaml:"outboundEndpoint"`
+	KeepOrigin       bool   `yaml:"keepOrigin"`
+	prependPath      bool   `yaml:"prependPath"`
 }
 
 // ResponseTransform struct
 type ResponseTransform struct {
-	ModifyStatus int
-	SetHeaders   map[string]string
-	ReformatBody map[string]string
+	ModifyStatus int               `yaml:"modifyStatus"`
+	SetHeaders   map[string]string `yaml:"setHeaders"`
+	ReformatBody map[string]string `yaml:"reformatBody"`
 }
 
 // Transform struct
 type Transform struct {
-	Append    map[string]string
-	Duplicate map[string]string
+	Append    map[string]string `yaml:"append"`
+	Duplicate map[string]string `yaml:"duplicate"`
 }
 
 // RequestTransform struct
 type RequestTransform struct {
-	Body  *Transform
-	Query *Transform
+	Body  *Transform `yaml:"body"`
+	Query *Transform `yaml:"query"`
 }
 
 // RateLimit struct
 type RateLimit struct {
-	Max      int
-	WindowMs int
+	Max      int `yaml:"max"`
+	WindowMs int `yaml:"windowMs"`
 }
 
 // Cors struct
 type Cors struct {
-	Origin  string
-	Methods string
-	Headers string
+	Origin  string `yaml:"origin"`
+	Methods string `yaml:"methods"`
+	Headers string `yaml:"headers"`
 }

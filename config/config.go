@@ -1,6 +1,8 @@
 package config
 
 import (
+	"os"
+
 	"github.com/go-yaml/yaml"
 	"github.com/kevinhury/membrane/config/actions"
 	"github.com/kevinhury/membrane/config/urlutils"
@@ -108,6 +110,12 @@ type InboundEndpoint struct {
 	Methods []string `yaml:"methods"`
 }
 
+// DefaultHost func
+func (ie *InboundEndpoint) DefaultHost() string {
+	name, _ := os.Hostname()
+	return name
+}
+
 // OutboundEndpoint struct
 type OutboundEndpoint struct {
 	Name string `yaml:"name"`
@@ -163,6 +171,10 @@ func Parse(data []byte) (*Map, error) {
 			plugin := pipeline.Plugins[idx]
 			if plugin.Name == "jwt" {
 				var act actions.JWT
+				mapstructure.Decode(plugin.Action, &act)
+				pipeline.Plugins[idx].Action = act
+			} else if plugin.Name == "jwt-extract" {
+				var act actions.JWTExtract
 				mapstructure.Decode(plugin.Action, &act)
 				pipeline.Plugins[idx].Action = act
 			} else if plugin.Name == "proxy" {

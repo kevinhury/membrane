@@ -6,6 +6,7 @@ import (
 	"github.com/kevinhury/membrane/config"
 	"github.com/kevinhury/membrane/reverseproxy/hooks/cors"
 	"github.com/kevinhury/membrane/reverseproxy/hooks/jwt"
+	jwtExtract "github.com/kevinhury/membrane/reverseproxy/hooks/jwt-extract"
 	"github.com/kevinhury/membrane/reverseproxy/hooks/proxy"
 	"github.com/kevinhury/membrane/reverseproxy/hooks/reqtransform"
 	"github.com/kevinhury/membrane/reverseproxy/hooks/restransform"
@@ -27,6 +28,7 @@ func Prehooks(conf *config.Configuration) map[string]PreHook {
 		"proxy":             proxy.Hook{Config: conf},
 		"request-transform": reqtransform.Hook{Config: conf},
 		"jwt":               jwt.Hook{Config: conf},
+		"jwt-extract":       jwtExtract.Hook{Config: conf},
 		"cors":              cors.Hook{Config: conf},
 	}
 }
