@@ -2,6 +2,7 @@ package reverseproxy
 
 import (
 	"errors"
+	"log"
 	"net/http"
 	"net/http/httputil"
 	"net/url"
@@ -74,6 +75,7 @@ func (reg *Registry) Serve(w http.ResponseWriter, r *http.Request) error {
 	}
 	err = reg.runPreHooks(w, r, pipelines)
 	if err != nil {
+		log.Printf("Error from prehook %+v\n", err)
 		return nil
 	}
 

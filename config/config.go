@@ -6,7 +6,6 @@ import (
 	"github.com/go-yaml/yaml"
 	"github.com/kevinhury/membrane/config/actions"
 	"github.com/kevinhury/membrane/config/urlutils"
-	"github.com/mitchellh/mapstructure"
 )
 
 // Configuration struct
@@ -169,31 +168,8 @@ func Parse(data []byte) (*Map, error) {
 		pipeline := conf.Pipelines[i]
 		for idx := 0; idx < len(pipeline.Plugins); idx++ {
 			plugin := pipeline.Plugins[idx]
-			if plugin.Name == "jwt" {
-				var act actions.JWT
-				mapstructure.Decode(plugin.Action, &act)
-				pipeline.Plugins[idx].Action = act
-			} else if plugin.Name == "jwt-extract" {
-				var act actions.JWTExtract
-				mapstructure.Decode(plugin.Action, &act)
-				pipeline.Plugins[idx].Action = act
-			} else if plugin.Name == "proxy" {
-				var act actions.Proxy
-				mapstructure.Decode(plugin.Action, &act)
-				pipeline.Plugins[idx].Action = act
-			} else if plugin.Name == "response-transform" {
-				var act actions.ResponseTransform
-				mapstructure.Decode(plugin.Action, &act)
-				pipeline.Plugins[idx].Action = act
-			} else if plugin.Name == "request-transform" {
-				var act actions.RequestTransform
-				mapstructure.Decode(plugin.Action, &act)
-				pipeline.Plugins[idx].Action = act
-			} else if plugin.Name == "cors" {
-				var act actions.Cors
-				mapstructure.Decode(plugin.Action, &act)
-				pipeline.Plugins[idx].Action = act
-			}
+			action := actions.Parse(plugin.Name, plugin.Action)
+			pipeline.Plugins[idx].Action = action
 		}
 	}
 
